@@ -69,7 +69,7 @@ abstract class Model
 
 		double[] distribution = new double[T];
 		for (int t = 0; t < T; t++) distribution[t] = wave[argminx][argminy][t] ? stationary[t] : 0;
-		int r = (int)distribution[(int)UnityEngine.Random.Range(0, distribution.Length)];
+		int r = Stuff.Random(distribution, UnityEngine.Random.value);
 		for (int t = 0; t < T; t++) wave[argminx][argminy][t] = t == r;
 		changes[argminx][argminy] = true;
 
