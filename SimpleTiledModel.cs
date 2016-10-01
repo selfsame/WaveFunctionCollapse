@@ -9,14 +9,16 @@ The software is provided "as is", without warranty of any kind, express or impli
 using System;
 using System.Xml;
 using System.Linq;
+using UnityEngine;
+using Color = System.Drawing.Color;
 using System.Drawing;
 using System.Collections.Generic;
 
 class SimpleTiledModel : Model
 {
-	bool[][][] propagator;
+	public bool[][][] propagator;
 
-	List<Color[]> tiles;
+	public List<Color[]> tiles;
 	int tilesize;
 	bool black;
 
@@ -28,14 +30,14 @@ class SimpleTiledModel : Model
 		this.black = black;
 
 		var xdoc = new XmlDocument();
-		xdoc.Load($"samples/{name}/data.xml");
+		xdoc.Load("Assets/WaveFunctionCollapse/samples/" + name + "/data.xml");
 		XmlNode xnode = xdoc.FirstChild;
 		tilesize = xnode.Get("size", 16);
 		bool unique = xnode.Get("unique", false);
 		xnode = xnode.FirstChild;
 
 		List<string> subset = null;
-		if (subsetName != default(string))
+		if (subsetName != "")
 		{
 			subset = new List<string>();
 			foreach (XmlNode xsubset in xnode.NextSibling.NextSibling.ChildNodes) 
@@ -124,13 +126,13 @@ class SimpleTiledModel : Model
 			{
 				for (int t = 0; t < cardinality; t++)
 				{
-					Bitmap bitmap = new Bitmap($"samples/{name}/{tilename} {t}.bmp");
+					Bitmap bitmap = new Bitmap("Assets/WaveFunctionCollapse/samples/" + name + "/" + tilename +" "+t+".bmp");
 					tiles.Add(tile((x, y) => bitmap.GetPixel(x, y)));
 				}
 			}
 			else
 			{
-				Bitmap bitmap = new Bitmap($"samples/{name}/{tilename}.bmp");
+				Bitmap bitmap = new Bitmap("Assets/WaveFunctionCollapse/samples/" + name + "/" + tilename + ".bmp");
 				tiles.Add(tile((x, y) => bitmap.GetPixel(x, y)));
 				for (int t = 1; t < cardinality; t++) tiles.Add(rotate(tiles[T + t - 1]));
 			}
@@ -246,7 +248,9 @@ class SimpleTiledModel : Model
 		return change;
 	}
 
-	protected override bool OnBoundary(int x, int y) => false;
+	protected override bool OnBoundary(int x, int y){
+		return false;
+	}
 
 	public override Bitmap Graphics()
 	{
