@@ -12,9 +12,11 @@ using UnityEngine;
 
 abstract class Model
 {
-	protected bool[][][] wave;
-	protected bool[][] changes;
-	protected double[] stationary;
+	public bool[][][] wave;
+	public bool[][] changes;
+	public double[] stationary;
+
+	protected bool init = false;
 
 	protected System.Random random;
 	protected int FMX, FMY, T, limit;
@@ -82,7 +84,10 @@ abstract class Model
 		logProb = new double[T];
 		for (int t = 0; t < T; t++) logProb[t] = Math.Log(stationary[t]);
 
-		Clear();
+		if (!this.init){
+			this.init = true;
+			this.Clear();
+		}
 
 		random = new System.Random(seed);
 
@@ -96,7 +101,7 @@ abstract class Model
 		return true;
 	}
 
-	protected virtual void Clear()
+	public virtual void Clear()
 	{
 		for (int x = 0; x < FMX; x++) for (int y = 0; y < FMY; y++)
 			{
