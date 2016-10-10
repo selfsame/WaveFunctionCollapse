@@ -8,6 +8,8 @@ The software is provided "as is", without warranty of any kind, express or impli
 
 using System;
 using System.Drawing;
+using UnityEngine;
+using Color = System.Drawing.Color;
 using System.Collections.Generic;
 
 class OverlappingModel : Model
@@ -15,25 +17,24 @@ class OverlappingModel : Model
 	int[][][][] propagator;
 	int N;
 
-	byte[][] patterns;
-	List<Color> colors;
+	public byte[][] patterns;
 	int foundation;
+	public List<byte> colors;
 
-	public OverlappingModel(string name, int N, int width, int height, bool periodicInput, bool periodicOutput, int symmetry, int foundation)
+	public OverlappingModel(byte[,] sample, int N, int width, int height, bool periodicInput, bool periodicOutput, int symmetry, int foundation)
 	{
 		this.N = N;
 		FMX = width;
 		FMY = height;
 		periodic = periodicOutput;
 
-		var bitmap = new Bitmap($"samples/{name}.bmp");
-		int SMX = bitmap.Width, SMY = bitmap.Height;
-		byte[,] sample = new byte[SMX, SMY];
-		colors = new List<Color>();
+		int SMX = sample.GetLength(0), SMY = sample.GetLength(1);
+
+		colors = new List<byte>();
 
 		for (int y = 0; y < SMY; y++) for (int x = 0; x < SMX; x++)
 			{
-				Color color = bitmap.GetPixel(x, y);
+				byte color = sample[x, y];
 
 				int i = 0;
 				foreach (var c in colors)
@@ -43,22 +44,25 @@ class OverlappingModel : Model
 				}
 
 				if (i == colors.Count) colors.Add(color);
-				sample[x, y] = (byte)i;
 			}
 
 		int C = colors.Count;
 		int W = Stuff.Power(C, N * N);
 
-		Func<Func<int, int, byte>, byte[]> pattern = f =>
+		Func<Func<int, int, byte>, byte[]> pattern = (f) =>
 		{
 			byte[] result = new byte[N * N];
-			for (int y = 0; y < N; y++) for (int x = 0; x < N; x++) result[x + y * N] = f(x, y);
+			for (int y = 0; y < N; y++){
+				for (int x = 0; x < N; x++){
+					result[x + y * N] = f(x, y);
+				}
+			}
 			return result;
 		};
 
-		Func<int, int, byte[]> patternFromSample = (x, y) => pattern((dx, dy) => sample[(x + dx) % SMX, (y + dy) % SMY]);
-		Func<byte[], byte[]> rotate = p => pattern((x, y) => p[N - 1 - y + x * N]);
-		Func<byte[], byte[]> reflect = p => pattern((x, y) => p[N - 1 - x + y * N]);
+		Func<int, int, byte[]> patternFromSample = (x, y) => {return pattern((dx, dy) => {return sample[(x + dx) % SMX, (y + dy) % SMY];});};
+		Func<byte[], byte[]> rotate  = (p) => {return pattern((x, y) => {return p[N - 1 - y + x * N];});};
+		Func<byte[], byte[]> reflect = (p) => {return pattern((x, y) => {return p[N - 1 - x + y * N];});};
 
 		Func<byte[], int> index = p =>
 		{
@@ -168,7 +172,8 @@ class OverlappingModel : Model
 		}
 	}
 
-	protected override bool OnBoundary(int x, int y) => !periodic && (x + N > FMX || y + N > FMY);
+	protected override bool OnBoundary(int x, int y){
+		return !periodic && (x + N > FMX || y + N > FMY);}
 
 	override protected bool Propagate()
 	{
@@ -214,6 +219,16 @@ class OverlappingModel : Model
 		return change;
 	}
 
+	public byte Sample(int x, int y){
+		List<byte> contributors = new List<byte>();
+		for (int t = 0; t < T; t++) if (wave[x][y][t]) contributors.Add(patterns[t][0]);
+		if (contributors.Count == 1){
+			return contributors[0];
+		} else {
+			return (byte)99;
+		}
+	}
+
 	public override Bitmap Graphics()
 	{
 		Bitmap result = new Bitmap(FMX, FMY);
@@ -236,7 +251,7 @@ class OverlappingModel : Model
 				int r = 0, g = 0, b = 0;
 				foreach (byte c in contributors)
 				{
-					Color color = colors[c];
+					Color color = new Color();
 					r += color.R;
 					g += color.G;
 					b += color.B;
@@ -249,7 +264,7 @@ class OverlappingModel : Model
 		return result;
 	}
 
-	protected override void Clear()
+	public override void Clear()
 	{
 		base.Clear();
 

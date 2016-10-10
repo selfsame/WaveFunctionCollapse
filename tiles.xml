@@ -1,0 +1,53 @@
+<set size="10">
+	<tiles>
+		<tile name="floor" symmetry="X"/>
+		<tile name="wall" symmetry="X"/>
+		<tile name="platform" symmetry="X"/>
+		<tile name="diag" symmetry="L"/>
+		<tile name="door" symmetry="I"/>
+	</tiles>
+	<neighbors>
+		<neighbor left="floor" right="floor"/>
+		<neighbor left="floor" right="wall"/>
+		<neighbor left="floor" right="platform"/>
+
+		<neighbor left="floor" right="diag 1"/>
+		<neighbor left="floor" right="door 1"/>
+		<neighbor left="floor" right="door 3"/>
+
+		<neighbor left="platform" right="platform"/>
+		<neighbor left="platform" right="floor"/>
+		<neighbor left="platform" right="wall"/>
+
+		<neighbor left="wall" right="wall"/>
+		<neighbor left="wall" right="floor"/>
+		<neighbor left="wall" right="platform"/>
+		<neighbor left="wall" right="diag"/>
+		<neighbor left="wall" right="door"/>
+
+		<neighbor left="door" right="wall"/>
+		<neighbor left="door 2" right="wall"/>
+		<neighbor left="door 1" right="floor"/>
+		<neighbor left="door 3" right="floor"/>
+
+		<neighbor left="diag" right="floor"/>
+		<neighbor left="diag 1" right="diag"/>
+		<neighbor left="diag 1" right="wall"/>
+
+	</neighbors>
+	<subsets>
+		<subset name="Standard">
+			<tile name="floor"/>
+			<tile name="wall"/>
+			<tile name="platform"/>
+			<tile name="diag"/>
+			<tile name="door"/>
+		</subset>
+		<subset name="rooms">
+			<tile name="floor"/>
+			<tile name="wall"/>
+			<tile name="diag"/>
+			<tile name="door"/>
+		</subset>
+	</subsets>
+</set>

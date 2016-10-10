@@ -10,7 +10,7 @@ using System;
 using System.Drawing;
 using UnityEngine;
 
-abstract class Model
+public abstract class Model
 {
 	public bool[][][] wave;
 	public bool[][] changes;

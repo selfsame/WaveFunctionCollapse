@@ -14,11 +14,11 @@ using Color = System.Drawing.Color;
 using System.Drawing;
 using System.Collections.Generic;
 
-public class SimpleTiledModel : Model
+class SimpleTiledModel : Model
 {
 	public bool[][][] propagator;
 
-	public List<string> tiles;
+	public List<Color[]> tiles;
 	int tilesize;
 	bool black;
 
@@ -30,9 +30,9 @@ public class SimpleTiledModel : Model
 		this.black = black;
 
 		var xdoc = new XmlDocument();
-		xdoc.Load(name);
+		xdoc.Load("Assets/WaveFunctionCollapse/samples/" + name + "/data.xml");
 		XmlNode xnode = xdoc.FirstChild;
-		tilesize = xnode.Get("size", 1);
+		tilesize = xnode.Get("size", 16);
 		bool unique = xnode.Get("unique", false);
 		xnode = xnode.FirstChild;
 
@@ -45,14 +45,16 @@ public class SimpleTiledModel : Model
 					foreach (XmlNode stile in xsubset.ChildNodes) subset.Add(stile.Get<string>("name"));
 		}
 
-
-		Func<string, string> rotate = (n) =>{
-			Debug.Log(n);
-			int rot = int.Parse(n.Substring(0,1))+1;
-			return ""+rot+n.Substring(1);
+		Func<Func<int, int, Color>, Color[]> tile = f =>
+		{
+			Color[] result = new Color[tilesize * tilesize];
+			for (int y = 0; y < tilesize; y++) for (int x = 0; x < tilesize; x++) result[x + y * tilesize] = f(x, y);
+			return result;
 		};
 
-		tiles = new List<string>();
+		Func<Color[], Color[]> rotate = array => tile((x, y) => array[tilesize - 1 - y + x * tilesize]);
+
+		tiles = new List<Color[]>();
 		var tempStationary = new List<double>();
 
 		List<int[]> action = new List<int[]>();
@@ -124,12 +126,14 @@ public class SimpleTiledModel : Model
 			{
 				for (int t = 0; t < cardinality; t++)
 				{
-					tiles.Add(""+"0"+tilename);
+					Bitmap bitmap = new Bitmap("Assets/WaveFunctionCollapse/samples/" + name + "/" + tilename +" "+t+".bmp");
+					tiles.Add(tile((x, y) => bitmap.GetPixel(x, y)));
 				}
 			}
 			else
 			{
-				tiles.Add("0"+tilename);
+				Bitmap bitmap = new Bitmap("Assets/WaveFunctionCollapse/samples/" + name + "/" + tilename + ".bmp");
+				tiles.Add(tile((x, y) => bitmap.GetPixel(x, y)));
 				for (int t = 1; t < cardinality; t++) tiles.Add(rotate(tiles[T + t - 1]));
 			}
 
@@ -244,16 +248,6 @@ public class SimpleTiledModel : Model
 		return change;
 	}
 
-	public string Sample(int x, int y){
-		List<string> contributors = new List<string>();
-		for (int t = 0; t < T; t++) if (wave[x][y][t]) contributors.Add(tiles[t]);
-		if (contributors.Count == 1){
-			return contributors[0];
-		} else {
-			return "?";
-		}
-	}
-
 	protected override bool OnBoundary(int x, int y){
 		return false;
 	}
@@ -276,7 +270,7 @@ public class SimpleTiledModel : Model
 							double r = 0, g = 0, b = 0;
 							for (int t = 0; t < T; t++) if (wave[x][y][t])
 								{
-									Color c = new Color();
+									Color c = tiles[t][xt + yt * tilesize];
 									r += (double)c.R * stationary[t] * lambda;
 									g += (double)c.G * stationary[t] * lambda;
 									b += (double)c.B * stationary[t] * lambda;
