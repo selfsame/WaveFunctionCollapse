@@ -75,7 +75,7 @@ public class TileSet : MonoBehaviour{
 						Vector3 pos = new Vector3(x*gridsize, 0, y*gridsize);
 						GameObject tile = (GameObject)Instantiate(fab, pos +this.gameObject.transform.position , Quaternion.identity);
 						tile.transform.parent = output.transform;
-						tile.transform.eulerAngles = new Vector3(0, rot*90, 0);
+						tile.transform.eulerAngles = new Vector3(0, ((4-rot)*-90), 0);
 						rendering[x,y] = tile;
 					}
 

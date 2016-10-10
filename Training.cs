@@ -29,8 +29,8 @@ class Training : MonoBehaviour{
 				for (int r = 0; r < 2; r++){
 					int idx = (int)sample[x, y];
 					int rot = Card(RS[idx] + r);
-					int ridx = (int)sample[x+1, y];
-					int rrot = Card(RS[ridx] - r);
+					int ridx = (int)sample[x+1-r, y+r];
+					int rrot = Card(RS[ridx] + r);
 					string key = ""+idx+"."+rot+"|"+ridx+"."+rrot;
 					if (!neighbors.ContainsKey(key) 
 						&& tiles[idx] && tiles[idx].name != "void"
@@ -44,7 +44,7 @@ class Training : MonoBehaviour{
 				}
 			}
 		}
-		 System.IO.File.WriteAllText("/home/selfsame/unity/wave/Assets/"+this.gameObject.name+".xml", NeighborXML());
+		 System.IO.File.WriteAllText("./Assets/"+this.gameObject.name+".xml", NeighborXML());
 
 	}
 
@@ -55,7 +55,13 @@ public string NeighborXML(){
 	foreach (UnityEngine.Object o in tiles){
 		if (!counts.ContainsKey(o) && o != null && o.name != "void"){
 			counts[o] = 1;
-			res += "<tile name=\""+o.name+"\" symmetry=\"X\"/>\n";
+			string sym = "X";
+			string nombre = o.name;
+			string last = nombre.Substring(nombre.Length - 1);
+			if (last == "X" || last == "I" || last == "L" || last == "T" || last == "/"){
+				sym = last;
+			}
+			res += "<tile name=\""+nombre+"\" symmetry=\""+sym+"\"/>\n";
 		}
 	}
 	res += "	</tiles>\n<neighbors>";
@@ -85,7 +91,8 @@ public string NeighborXML(){
 				UnityEngine.Object fab = PrefabUtility.GetPrefabParent(tile);
 				int X = (int)(tilepos.x) / gridsize;
 				int Y = (int)(tilepos.z) / gridsize;
-				int R = (int)tile.transform.eulerAngles.y / 90;
+				int R = (int)(360f - tile.transform.eulerAngles.y)/ 90;
+				if (R == 4) {R = 0;};
 				if (!str_tile.ContainsKey(fab.name+R)){
 					int index = str_tile.Count+1;
 					str_tile.Add(fab.name+R, (byte)index);
