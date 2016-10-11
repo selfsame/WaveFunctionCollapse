@@ -9,29 +9,22 @@ The software is provided "as is", without warranty of any kind, express or impli
 using System;
 using System.Xml;
 using System.Linq;
-using UnityEngine;
-using System.Drawing;
 using System.Collections.Generic;
 
 public class SimpleTiledModel : Model
 {
 	public bool[][][] propagator;
-
 	public List<string> tiles;
-	int tilesize;
-	bool black;
 
-	public SimpleTiledModel(string name, string subsetName, int width, int height, bool periodic, bool black)
+	public SimpleTiledModel(string name, string subsetName, int width, int height, bool periodic)
 	{
 		FMX = width;
 		FMY = height;
 		this.periodic = periodic;
-		this.black = black;
 
 		var xdoc = new XmlDocument();
 		xdoc.Load(name);
 		XmlNode xnode = xdoc.FirstChild;
-		tilesize = xnode.Get("size", 1);
 		bool unique = xnode.Get("unique", false);
 		xnode = xnode.FirstChild;
 
@@ -256,9 +249,4 @@ public class SimpleTiledModel : Model
 		return false;
 	}
 
-	public override Bitmap Graphics()
-	{
-		Bitmap result = new Bitmap(FMX * tilesize, FMY * tilesize);
-		return result;
-	}
 }

@@ -7,8 +7,6 @@ The software is provided "as is", without warranty of any kind, express or impli
 */
 
 using System;
-using System.Drawing;
-using UnityEngine;
 
 public abstract class Model
 {
@@ -71,7 +69,7 @@ public abstract class Model
 
 		double[] distribution = new double[T];
 		for (int t = 0; t < T; t++) distribution[t] = wave[argminx][argminy][t] ? stationary[t] : 0;
-		int r = Stuff.Random(distribution, UnityEngine.Random.value);
+		int r = Stuff.Random(distribution, random.NextDouble());
 		for (int t = 0; t < T; t++) wave[argminx][argminy][t] = t == r;
 		changes[argminx][argminy] = true;
 
@@ -89,7 +87,11 @@ public abstract class Model
 			this.Clear();
 		}
 
-		random = new System.Random(seed);
+		if (seed==0){
+			random = new System.Random();
+		}else{
+			random = new System.Random(seed);
+		}
 
 		for (int l = 0; l < limit || limit == 0; l++)
 		{
@@ -111,5 +113,4 @@ public abstract class Model
 	}
 
 	protected abstract bool OnBoundary(int x, int y);
-	public abstract Bitmap Graphics();
 }

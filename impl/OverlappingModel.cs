@@ -7,8 +7,6 @@ The software is provided "as is", without warranty of any kind, express or impli
 */
 
 using System;
-using System.Drawing;
-using UnityEngine;
 using System.Collections.Generic;
 
 class OverlappingModel : Model
@@ -226,12 +224,6 @@ class OverlappingModel : Model
 		} else {
 			return (byte)99;
 		}
-	}
-
-	public override Bitmap Graphics()
-	{
-		Bitmap result = new Bitmap(FMX, FMY);
-		return result;
 	}
 
 	public override void Clear()

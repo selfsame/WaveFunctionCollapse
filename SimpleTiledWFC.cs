@@ -5,7 +5,7 @@ using UnityEditor;
 using System.Collections.Generic;
 
 
-public class TileSet : MonoBehaviour{
+public class SimpleTiledWFC : MonoBehaviour{
 	
 	public string xmlpath = null;
 	public string subset = null;
@@ -14,9 +14,10 @@ public class TileSet : MonoBehaviour{
 	public int width = 20;
 	public int depth = 20;
 
+	public int seed = 0;
 	public bool periodic = false;
-	public int iterations = 50;
-	public bool autodraw;
+	public int iterations = 0;
+	public bool incremental;
 
 	public SimpleTiledModel model = null;
 	public GameObject[,] rendering;
@@ -29,14 +30,28 @@ public class TileSet : MonoBehaviour{
  		}
  	}
 
- 	public void OnValidate(){
+ 	void Start(){
+		Generate();
+		Run();
+	}
 
- 	}
+	void Update(){
+		if (incremental){
+			Run();
+		}
+	}
+
+
+	public void Run(){
+		if (model.Run(seed, iterations)){
+			Draw();
+		}
+	}
 
 	public void OnDrawGizmos(){
 		Gizmos.color = Color.magenta;
 		Gizmos.DrawWireCube(transform.position + new Vector3(width*gridsize/2, 0, depth*gridsize/2),new Vector3(width*gridsize, gridsize, depth*gridsize));
-		if (autodraw) {
+		if (incremental) {
 			if (model != null){
 				model.Run(1, 5);
 				Draw();
@@ -47,9 +62,9 @@ public class TileSet : MonoBehaviour{
 	public void Generate(){
 		obmap = new  Dictionary<string, GameObject>();
 		DestroyImmediate(output);
-		output = new GameObject("output");
+		output = new GameObject("output-SimpleTiledModel");
 		rendering = new GameObject[width, depth];
-		this.model = new SimpleTiledModel(xmlpath, subset, width, depth, periodic, false);
+		this.model = new SimpleTiledModel(xmlpath, subset, width, depth, periodic);
 	}
 
 	public void Draw(){
@@ -87,10 +102,10 @@ public class TileSet : MonoBehaviour{
 	}
 }
 
-[CustomEditor (typeof(TileSet))]
+[CustomEditor (typeof(SimpleTiledWFC))]
 public class TileSetEditor : Editor {
 	public override void OnInspectorGUI () {
-		TileSet me = (TileSet)target;
+		SimpleTiledWFC me = (SimpleTiledWFC)target;
 
 		if (me.xmlpath != null){
 			if(GUILayout.Button("generate")){
@@ -98,7 +113,7 @@ public class TileSetEditor : Editor {
 			}
 			if (me.model != null){
 				if(GUILayout.Button("RUN")){
-					me.model.Run(1, 10);
+					me.model.Run(me.seed, me.iterations);
 					me.Draw();
 				}
 			}

@@ -3,19 +3,20 @@ using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
 
-class WFCGenerator : MonoBehaviour{
-	public Training training;
+class OverlapWFC : MonoBehaviour{
+	public Training training = null;
 
 	public int gridsize = 2;
 	public int width = 20;
 	public int depth = 20;
+	public int seed = 0;
 	public int N = 2;
 	public bool periodicInput = false;
 	public bool periodicOutput = false;
 	public int symmetry = 1;
 	public int foundation = 0;
-	public int iterations = 50;
-	public bool autodraw;
+	public int iterations = 0;
+	public bool incremental = false;
 
 	public OverlappingModel model = null;
 
@@ -23,6 +24,14 @@ class WFCGenerator : MonoBehaviour{
 	public GameObject output;
 
 	void Start(){
+		Generate();
+		Run();
+	}
+
+	void Update(){
+		if (incremental){
+			Run();
+		}
 	}
 
 	public void Generate() {
@@ -31,7 +40,7 @@ class WFCGenerator : MonoBehaviour{
 			training.Compile();
 		}
 		DestroyImmediate(output);
-		output = new GameObject("output");
+		output = new GameObject("output-OverlapModel");
 		rendering = new GameObject[width, depth];
 		model = new OverlappingModel(training.sample, N, width, depth, periodicInput, periodicOutput, symmetry, foundation);
 	}
@@ -39,11 +48,16 @@ class WFCGenerator : MonoBehaviour{
 	void OnDrawGizmos(){
 		Gizmos.color = Color.cyan;
 		Gizmos.DrawWireCube(transform.position + new Vector3(width*gridsize/2, 0, depth*gridsize/2),new Vector3(width*gridsize, gridsize, depth*gridsize));
-		if (autodraw) {
+		if (incremental) {
 			if (model != null){
 				model.Run(1, 5);
 				Draw();
 			}
+		}
+	}
+	public void Run(){
+		if (model.Run(seed, iterations)){
+			Draw();
 		}
 	}
 
@@ -73,18 +87,17 @@ class WFCGenerator : MonoBehaviour{
 	}
 }
 
-[CustomEditor (typeof(WFCGenerator))]
+[CustomEditor (typeof(OverlapWFC))]
 public class WFCGeneratorEditor : Editor {
 	public override void OnInspectorGUI () {
-		WFCGenerator generator = (WFCGenerator)target;
+		OverlapWFC generator = (OverlapWFC)target;
 		if (generator.training != null){
 			if(GUILayout.Button("generate")){
 				generator.Generate();
 			}
 			if (generator.model != null){
 				if(GUILayout.Button("RUN")){
-					generator.model.Run(1, generator.iterations);
-					generator.Draw();
+					generator.Run();
 				}
 			}
 		}

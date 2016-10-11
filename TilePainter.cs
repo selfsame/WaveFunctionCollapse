@@ -6,21 +6,21 @@ using System.Collections.Generic;
 
 
 [RequireComponent(typeof(BoxCollider))]
-public class TileLayer : MonoBehaviour{
+public class TilePainter : MonoBehaviour{
 
 	public int gridsize = 2;
 	public int width = 20;
 	public int height = 20;
-	public int _w = 20;
-	public int _h = 20;
+	private int _w = 20;
+	private int _h = 20;
 	public Vector3 cursor;
 	public GameObject[,] tileobs;
 	public GameObject tiles;
 
-	public int colidx = 0; 
-	public UnityEngine.Object[] palette;
-	public UnityEngine.Object color;
-	public Quaternion color_rotation;
+	int colidx = 0; 
+	public UnityEngine.Object[] palette = new UnityEngine.Object[0];
+	public UnityEngine.Object color = null;
+	Quaternion color_rotation;
 
 	public bool focused = false;
 
@@ -51,32 +51,28 @@ public class TileLayer : MonoBehaviour{
 				GameObject g = CreatePrefab(o, new Vector3(i*gridsize, 0f, -gridsize*2) , Quaternion.identity);
 				g.transform.parent = pal.transform;
 			}
-			
 		}
 		tileobs = new GameObject[width, height];
 		if (tiles == null){
 			tiles = new GameObject("tiles");
 			tiles.hideFlags = HideFlags.HideInInspector;
 			tiles.transform.parent = this.gameObject.transform;
-		} else {
-			int cnt = tiles.transform.childCount;
-			List<GameObject> trash = new List<GameObject>();
-
-			for (int i = 0; i < cnt; i++){
-				GameObject tile = tiles.transform.GetChild(i).gameObject;
-				Vector3 tilepos = tile.transform.position;
-				int X = (int)(tilepos.x / gridsize);
-				int Y = (int)(tilepos.z / gridsize);
-				if (ValidCoords(X, Y)){
-				tileobs[X, Y] = tile; 
-				} else {
-					trash.Add(tile);
-				}
-			}
-			for (int i = 0; i < trash.Count; i++){
-				if (Application.isPlaying){Destroy(trash[i]);} else {DestroyImmediate(trash[i]);}}
-
 		}
+		int cnt = tiles.transform.childCount;
+		List<GameObject> trash = new List<GameObject>();
+		for (int i = 0; i < cnt; i++){
+			GameObject tile = tiles.transform.GetChild(i).gameObject;
+			Vector3 tilepos = tile.transform.position;
+			int X = (int)(tilepos.x / gridsize);
+			int Y = (int)(tilepos.z / gridsize);
+			if (ValidCoords(X, Y)){
+			tileobs[X, Y] = tile; 
+			} else {
+				trash.Add(tile);
+			}
+		}
+		for (int i = 0; i < trash.Count; i++){
+			if (Application.isPlaying){Destroy(trash[i]);} else {DestroyImmediate(trash[i]);}}	
 	}
 
 	public void Resize(){
@@ -99,6 +95,7 @@ public class TileLayer : MonoBehaviour{
 		BoxCollider bounds = this.GetComponent<BoxCollider>();
 		bounds.center = new Vector3((width*gridsize)*0.5f-gridsize*0.5f, 0f, (height*gridsize)*0.5f-gridsize*0.5f);
 		bounds.size = new Vector3(width*gridsize, 0f, (height*gridsize));
+
 	}
 
 	public Vector3 GridV3(Vector3 pos){
@@ -135,6 +132,8 @@ public class TileLayer : MonoBehaviour{
 	}
 
 	public void Drag(Vector3 mouse, TileLayerEditor.TileOperation op){
+		Resize();
+		if (tileobs == null){Restore();}
 		if (this.ValidCoords((int)cursor.x, (int)cursor.z)){
 			if (op == TileLayerEditor.TileOperation.Sampling){
 				UnityEngine.Object s = PrefabUtility.GetPrefabParent(tileobs[(int)cursor.x, (int)cursor.z]);
@@ -145,6 +144,7 @@ public class TileLayer : MonoBehaviour{
 			} else {
 				DestroyImmediate(tileobs[(int)cursor.x, (int)cursor.z]); 
 				if (op == TileLayerEditor.TileOperation.Drawing){
+					if (color == null){return;}
 					GameObject o = CreatePrefab(color, new Vector3() , color_rotation);
 					o.transform.parent = tiles.transform;
 					o.transform.position = (cursor*gridsize)+this.gameObject.transform.position;
@@ -161,52 +161,46 @@ public class TileLayer : MonoBehaviour{
 		}
 	}
 
+	public void Clear(){
+		tileobs = new GameObject[width, height];
+		DestroyImmediate(tiles);
+		tiles = new GameObject("tiles");
+		tiles.transform.parent = gameObject.transform;
+	}
 
 	public void OnDrawGizmos(){
 		Gizmos.color = Color.white;
 
 		if (focused){
-			Gizmos.color = Color.red;
+			Gizmos.color = new Color(1f,0f,0f,0.6f);
 			Gizmos.DrawRay(Local(cursor*gridsize)+Vector3.forward*-49999f, Vector3.forward*99999f);
 			Gizmos.DrawRay(Local(cursor*gridsize)+Vector3.right*-49999f, Vector3.right*99999f);
+			Gizmos.DrawRay(Local(cursor*gridsize)+Vector3.up*-49999f, Vector3.up*99999f);
 			Gizmos.color = Color.yellow;
 		}
 
 		Gizmos.DrawWireCube(transform.position + new Vector3((width*gridsize)*0.5f-gridsize*0.5f, 0f, (height*gridsize)*0.5f-gridsize*0.5f),
 			new Vector3(width*gridsize, 0f, (height*gridsize)));
-
-
 	}
 }
  
 
- [CustomEditor(typeof(TileLayer))]
+ [CustomEditor(typeof(TilePainter))]
  public class TileLayerEditor : Editor{
  	public enum TileOperation {None, Drawing, Erasing, Sampling};
  	private TileOperation operation;
- 	private bool dragging = false;
 
 	public override void OnInspectorGUI () {
-		TileLayer me = (TileLayer)target;
+		TilePainter me = (TilePainter)target;
 		if(GUILayout.Button("CLEAR")){
-
-				me.tileobs = new GameObject[me.width, me.height];
-				DestroyImmediate(me.tiles);
-				me.tiles = new GameObject("tiles");
-				me.tiles.transform.parent = me.gameObject.transform;
-			}
-		DrawDefaultInspector();
-		if (me._w != me.width || me._h != me.height){
-			if(GUILayout.Button("update crop")){
-				me.Resize();
-			}}
-		 }
+			me.Clear();}
+		DrawDefaultInspector();}
 
 	private bool AmHovering(Event e){
-		TileLayer me = (TileLayer)target;
+		TilePainter me = (TilePainter)target;
 		RaycastHit hit;
 		if (Physics.Raycast(HandleUtility.GUIPointToWorldRay(Event.current.mousePosition), out hit, Mathf.Infinity) && 
-			 	hit.collider.GetComponentInParent<TileLayer>() == me)
+			 	hit.collider.GetComponentInParent<TilePainter>() == me)
 		{
 			me.cursor = me.GridV3(hit.point);
 			me.focused = true;
@@ -220,11 +214,10 @@ public class TileLayer : MonoBehaviour{
 	}
 
 	public void ProcessEvents(){
-		TileLayer me = (TileLayer)target;
+		TilePainter me = (TilePainter)target;
         int controlID = GUIUtility.GetControlID(1778, FocusType.Passive);
         EditorWindow currentWindow = EditorWindow.mouseOverWindow;
         if(currentWindow && AmHovering(Event.current)){
-            Rect winRect = currentWindow.position;
             Event current = Event.current;
  			bool leftbutton = (current.button == 0);
             switch(current.type){
@@ -253,15 +246,18 @@ public class TileLayer : MonoBehaviour{
                     }
                     break;
                 case EventType.mouseDrag:
-                    if (true)
+                    if (leftbutton)
                     {
-                        me.Drag(current.mousePosition, operation);
-                        current.Use();
+                        if (operation != TileOperation.None){
+                        	me.Drag(current.mousePosition, operation);
+                        	current.Use();
+                        }
+                        
                         return;
                     }
                     break;
                 case EventType.mouseUp:
-                    if (true)
+                    if (leftbutton)
                     {
                     	operation = TileOperation.None;
                         current.Use();
@@ -269,6 +265,7 @@ public class TileLayer : MonoBehaviour{
                     }
                 break;
                 case EventType.mouseMove:
+                	current.Use();
                 break;
                 case EventType.repaint:
                 break;
