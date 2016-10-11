@@ -26,6 +26,10 @@ class WFCGenerator : MonoBehaviour{
 	}
 
 	public void Generate() {
+		if (training == null){Debug.Log("Can't Generate: no designated Training component");}
+		if (training.sample == null){
+			training.Compile();
+		}
 		DestroyImmediate(output);
 		output = new GameObject("output");
 		rendering = new GameObject[width, depth];
@@ -33,7 +37,7 @@ class WFCGenerator : MonoBehaviour{
 	}
 
 	void OnDrawGizmos(){
-		Gizmos.color = Color.magenta;
+		Gizmos.color = Color.cyan;
 		Gizmos.DrawWireCube(transform.position + new Vector3(width*gridsize/2, 0, depth*gridsize/2),new Vector3(width*gridsize, gridsize, depth*gridsize));
 		if (autodraw) {
 			if (model != null){
@@ -44,6 +48,7 @@ class WFCGenerator : MonoBehaviour{
 	}
 
 	public void Draw(){
+		if (output == null){return;}
 		for (int y = 0; y < depth; y++){
 			for (int x = 0; x < width; x++){
 				if (rendering[x,y] == null){
@@ -53,10 +58,12 @@ class WFCGenerator : MonoBehaviour{
 						Vector3 pos = new Vector3(x*gridsize, 0, y*gridsize);
 						int rot = (int)training.RS[v];
 						GameObject fab = training.tiles[v] as GameObject;
-						GameObject tile = (GameObject)Instantiate(fab, pos +this.gameObject.transform.position , Quaternion.identity);
-						tile.transform.parent = output.transform;
-						tile.transform.eulerAngles = new Vector3(0, rot*90, 0);
-						rendering[x,y] = tile;
+						if (fab != null){
+							GameObject tile = (GameObject)Instantiate(fab, pos +this.gameObject.transform.position , Quaternion.identity);
+							tile.transform.parent = output.transform;
+							tile.transform.eulerAngles = new Vector3(0, rot*90, 0);
+							rendering[x,y] = tile;
+						}
 					}
 
 

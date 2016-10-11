@@ -37,6 +37,22 @@ public class TileLayer : MonoBehaviour{
 	}
 
 	public void Restore(){
+		GameObject.DestroyImmediate(GameObject.Find("palette"));
+		GameObject pal = new GameObject("palette");
+		BoxCollider bc = pal.AddComponent<BoxCollider>();
+		bc.size = new Vector3(palette.Length*gridsize, 0f, gridsize);
+		bc.center = new Vector3((palette.Length-1f)*gridsize*0.5f, 0f, 0f);
+
+		pal.transform.parent = this.gameObject.transform;
+		pal.transform.position = new Vector3(0f,0f, -gridsize*2);
+		for (int i = 0; i < palette.Length; i++){
+			UnityEngine.Object o = palette[i];
+			if (o != null){
+				GameObject g = CreatePrefab(o, new Vector3(i*gridsize, 0f, -gridsize*2) , Quaternion.identity);
+				g.transform.parent = pal.transform;
+			}
+			
+		}
 		tileobs = new GameObject[width, height];
 		if (tiles == null){
 			tiles = new GameObject("tiles");
@@ -136,7 +152,12 @@ public class TileLayer : MonoBehaviour{
 				}
 			}
 		} else {
-			Debug.Log("OOB"+cursor);
+			if (op == TileLayerEditor.TileOperation.Sampling){
+				if (cursor.z == -1 && cursor.x >= 0 && cursor.x < palette.Length){
+					color = palette[(int)cursor.x];
+					color_rotation = Quaternion.identity;
+				}
+			}
 		}
 	}
 
@@ -161,7 +182,7 @@ public class TileLayer : MonoBehaviour{
 
  [CustomEditor(typeof(TileLayer))]
  public class TileLayerEditor : Editor{
- 	public enum TileOperation {Drawing, Erasing, Sampling};
+ 	public enum TileOperation {None, Drawing, Erasing, Sampling};
  	private TileOperation operation;
  	private bool dragging = false;
 
@@ -214,7 +235,7 @@ public class TileLayer : MonoBehaviour{
                     current.Use();
                     return;
                 case EventType.keyUp:
-                	operation = TileOperation.Drawing;
+                	operation = TileOperation.None;
                 	if (current.keyCode == KeyCode.Space) me.Turn();
                 	if (current.keyCode == KeyCode.B) me.CycleColor();
                     current.Use();
@@ -222,6 +243,9 @@ public class TileLayer : MonoBehaviour{
                 case EventType.mouseDown:
                     if (leftbutton)
                     {
+                    	if (operation == TileOperation.None){
+                    		operation = TileOperation.Drawing;
+                    	}
                     	me.Drag(current.mousePosition, operation);
 
                         current.Use();
@@ -239,6 +263,7 @@ public class TileLayer : MonoBehaviour{
                 case EventType.mouseUp:
                     if (true)
                     {
+                    	operation = TileOperation.None;
                         current.Use();
                         return;
                     }

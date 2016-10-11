@@ -10,7 +10,6 @@ using System;
 using System.Xml;
 using System.Linq;
 using UnityEngine;
-using Color = System.Drawing.Color;
 using System.Drawing;
 using System.Collections.Generic;
 
@@ -47,7 +46,6 @@ public class SimpleTiledModel : Model
 
 
 		Func<string, string> rotate = (n) =>{
-			Debug.Log(n);
 			int rot = int.Parse(n.Substring(0,1))+1;
 			return ""+rot+n.Substring(1);
 		};
@@ -261,32 +259,6 @@ public class SimpleTiledModel : Model
 	public override Bitmap Graphics()
 	{
 		Bitmap result = new Bitmap(FMX * tilesize, FMY * tilesize);
-
-		for (int x = 0; x < FMX; x++) for (int y = 0; y < FMY; y++)
-			{
-				bool[] a = wave[x][y];
-				int amount = (from b in a where b select 1).Sum();
-				double lambda = 1.0 / (from t in Enumerable.Range(0, T) where a[t] select stationary[t]).Sum();
-
-				for (int yt = 0; yt < tilesize; yt++) for (int xt = 0; xt < tilesize; xt++)
-					{
-						if (black && amount == T) result.SetPixel(x * tilesize + xt, y * tilesize + yt, Color.Black);
-						else
-						{
-							double r = 0, g = 0, b = 0;
-							for (int t = 0; t < T; t++) if (wave[x][y][t])
-								{
-									Color c = new Color();
-									r += (double)c.R * stationary[t] * lambda;
-									g += (double)c.G * stationary[t] * lambda;
-									b += (double)c.B * stationary[t] * lambda;
-								}
-
-							result.SetPixel(x * tilesize + xt, y * tilesize + yt, Color.FromArgb((int)r, (int)g, (int)b));
-						}
-					}
-			}
-
 		return result;
 	}
 }

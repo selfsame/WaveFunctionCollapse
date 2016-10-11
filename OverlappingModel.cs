@@ -9,7 +9,6 @@ The software is provided "as is", without warranty of any kind, express or impli
 using System;
 using System.Drawing;
 using UnityEngine;
-using Color = System.Drawing.Color;
 using System.Collections.Generic;
 
 class OverlappingModel : Model
@@ -232,35 +231,6 @@ class OverlappingModel : Model
 	public override Bitmap Graphics()
 	{
 		Bitmap result = new Bitmap(FMX, FMY);
-
-		for (int y = 0; y < FMY; y++) for (int x = 0; x < FMX; x++)
-			{
-				List<byte> contributors = new List<byte>();
-				for (int dy = 0; dy < N; dy++) for (int dx = 0; dx < N; dx++)
-					{
-						int sx = x - dx;
-						if (sx < 0) sx += FMX;
-
-						int sy = y - dy;
-						if (sy < 0) sy += FMY;
-
-						if (OnBoundary(sx, sy)) continue;
-						for (int t = 0; t < T; t++) if (wave[sx][sy][t]) contributors.Add(patterns[t][dx + dy * N]);
-					}
-
-				int r = 0, g = 0, b = 0;
-				foreach (byte c in contributors)
-				{
-					Color color = new Color();
-					r += color.R;
-					g += color.G;
-					b += color.B;
-				}
-
-				float lambda = 1.0f / (float)contributors.Count;
-				result.SetPixel(x, y, Color.FromArgb((int)(lambda * r), (int)(lambda * g), (int)(lambda * b)));
-			}
-
 		return result;
 	}
 

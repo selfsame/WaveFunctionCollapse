@@ -45,7 +45,7 @@ public class TileSet : MonoBehaviour{
 	}
 
 	public void Generate(){
-		obmap = new Dictionary<string, GameObject>();
+		obmap = new  Dictionary<string, GameObject>();
 		DestroyImmediate(output);
 		output = new GameObject("output");
 		rendering = new GameObject[width, depth];
@@ -53,6 +53,7 @@ public class TileSet : MonoBehaviour{
 	}
 
 	public void Draw(){
+		if (output == null){return;}
 		for (int y = 0; y < depth; y++){
 			for (int x = 0; x < width; x++){ 
 				if (rendering[x,y] == null){
@@ -75,7 +76,7 @@ public class TileSet : MonoBehaviour{
 						Vector3 pos = new Vector3(x*gridsize, 0, y*gridsize);
 						GameObject tile = (GameObject)Instantiate(fab, pos +this.gameObject.transform.position , Quaternion.identity);
 						tile.transform.parent = output.transform;
-						tile.transform.eulerAngles = new Vector3(0, ((4-rot)*-90), 0);
+						tile.transform.eulerAngles = new Vector3(0, 360-(rot*-90), 0);
 						rendering[x,y] = tile;
 					}
 
