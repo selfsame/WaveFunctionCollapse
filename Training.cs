@@ -121,7 +121,7 @@ class Training : MonoBehaviour{
 
 	void OnDrawGizmos(){
 		Gizmos.color = Color.magenta;
-		Gizmos.DrawWireCube(transform.position + new Vector3((width*gridsize/2)-gridsize*0.5f, 0, (depth*gridsize/2)-gridsize*0.5f),
+		Gizmos.DrawWireCube(transform.position + new Vector3((width*gridsize/2f)-gridsize*0.5f, 0, (depth*gridsize/2f)-gridsize*0.5f),
 							new Vector3(width*gridsize, gridsize, depth*gridsize));
 		Gizmos.color = Color.cyan;
 		for (int i = 0; i < this.transform.childCount; i++){

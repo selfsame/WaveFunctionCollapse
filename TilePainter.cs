@@ -62,12 +62,13 @@ public class TilePainter : MonoBehaviour{
 		if (tiles == null){
 			tiles = new GameObject("tiles");
 			tiles.transform.parent = this.gameObject.transform;
+			tiles.transform.localPosition = new Vector3();
 		}
 		int cnt = tiles.transform.childCount;
 		List<GameObject> trash = new List<GameObject>();
 		for (int i = 0; i < cnt; i++){
 			GameObject tile = tiles.transform.GetChild(i).gameObject;
-			Vector3 tilepos = tile.transform.position;
+			Vector3 tilepos = tile.transform.localPosition;
 			int X = (int)(tilepos.x / gridsize);
 			int Y = (int)(tilepos.z / gridsize);
 			if (ValidCoords(X, Y)){
@@ -176,6 +177,7 @@ public class TilePainter : MonoBehaviour{
 		DestroyImmediate(tiles);
 		tiles = new GameObject("tiles");
 		tiles.transform.parent = gameObject.transform;
+		tiles.transform.localPosition = new Vector3();
 	}
 
 	public void OnDrawGizmos(){
