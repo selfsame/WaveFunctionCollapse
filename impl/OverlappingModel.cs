@@ -28,7 +28,7 @@ class OverlappingModel : Model
 		int SMX = sample.GetLength(0), SMY = sample.GetLength(1);
 
 		colors = new List<byte>();
-
+		colors.Add((byte)0);
 		for (int y = 0; y < SMY; y++) for (int x = 0; x < SMX; x++)
 			{
 				byte color = sample[x, y];
@@ -199,11 +199,12 @@ class OverlappingModel : Model
 
 							for (int t2 = 0; t2 < T; t2++)
 							{
+								if (!allowed[t2]) continue;
 								b = false;
 								int[] prop = propagator[t2][N - 1 - dx][N - 1 - dy];
 								for (int i1 = 0; i1 < prop.Length && !b; i1++) b = wave[x1][y1][prop[i1]];
 
-								if (allowed[t2] && !b)
+								if (!b)
 								{
 									changes[sx][sy] = true;
 									change = true;
@@ -217,13 +218,14 @@ class OverlappingModel : Model
 	}
 
 	public byte Sample(int x, int y){
-		List<byte> contributors = new List<byte>();
-		for (int t = 0; t < T; t++) if (wave[x][y][t]) contributors.Add(patterns[t][0]);
-		if (contributors.Count == 1){
-			return contributors[0];
-		} else {
-			return (byte)99;
+		bool found = false;
+		byte res = (byte)99;
+		for (int t = 0; t < T; t++) if (wave[x][y][t]){
+			if (found) {return (byte)99;}
+			found = true;
+			res = patterns[t][0];
 		}
+		return res;
 	}
 
 	public override void Clear()

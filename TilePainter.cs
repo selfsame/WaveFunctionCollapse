@@ -11,8 +11,7 @@ public class TilePainter : MonoBehaviour{
 	public int gridsize = 2;
 	public int width = 20;
 	public int height = 20;
-	private int _w = 20;
-	private int _h = 20;
+	private bool _changed = true;
 	public Vector3 cursor;
 	public GameObject[,] tileobs;
 	public GameObject tiles;
@@ -37,6 +36,10 @@ public class TilePainter : MonoBehaviour{
 	}
 
 	public void Restore(){
+		BoxCollider bounds = this.GetComponent<BoxCollider>();
+		bounds.center = new Vector3((width*gridsize)*0.5f-gridsize*0.5f, 0f, (height*gridsize)*0.5f-gridsize*0.5f);
+		bounds.size = new Vector3(width*gridsize, 0f, (height*gridsize));
+
 		GameObject.DestroyImmediate(GameObject.Find("palette"));
 		GameObject pal = new GameObject("palette");
 		pal.hideFlags = HideFlags.HideInHierarchy;
@@ -78,9 +81,8 @@ public class TilePainter : MonoBehaviour{
 	}
 
 	public void Resize(){
-		if (width != _w || height != _h){
-			_w = width;
-			_h = height;
+		if (_changed){
+			_changed = false;
 			Restore(); 
 		}
 	}
@@ -94,10 +96,7 @@ public class TilePainter : MonoBehaviour{
 	}
 
 	void OnValidate(){
-		BoxCollider bounds = this.GetComponent<BoxCollider>();
-		bounds.center = new Vector3((width*gridsize)*0.5f-gridsize*0.5f, 0f, (height*gridsize)*0.5f-gridsize*0.5f);
-		bounds.size = new Vector3(width*gridsize, 0f, (height*gridsize));
-
+		_changed = true;
 	}
 
 	public Vector3 GridV3(Vector3 pos){
@@ -267,6 +266,7 @@ public class TilePainter : MonoBehaviour{
                     }
                 break;
                 case EventType.mouseMove:
+                	me.Resize();
                 	current.Use();
                 break;
                 case EventType.repaint:

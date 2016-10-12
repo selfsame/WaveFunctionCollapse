@@ -236,13 +236,14 @@ public class SimpleTiledModel : Model
 	}
 
 	public string Sample(int x, int y){
-		List<string> contributors = new List<string>();
-		for (int t = 0; t < T; t++) if (wave[x][y][t]) contributors.Add(tiles[t]);
-		if (contributors.Count == 1){
-			return contributors[0];
-		} else {
-			return "?";
+		bool found = false;
+		string res = "?";
+		for (int t = 0; t < T; t++) if (wave[x][y][t]){
+			if (found) {return "?";}
+			found = true;
+			res = tiles[t];
 		}
+		return res;
 	}
 
 	protected override bool OnBoundary(int x, int y){
