@@ -11,17 +11,19 @@ public class TilePainter : MonoBehaviour{
 	public int gridsize = 2;
 	public int width = 20;
 	public int height = 20;
+	public GameObject tiles;
 	private bool _changed = true;
 	public Vector3 cursor;
+	public bool focused = false;
 	public GameObject[,] tileobs;
-	public GameObject tiles;
+	
 
 	int colidx = 0; 
 	public UnityEngine.Object[] palette = new UnityEngine.Object[0];
 	public UnityEngine.Object color = null;
 	Quaternion color_rotation;
 
-	public bool focused = false;
+	
 
 
 	public void Encode(){
@@ -36,9 +38,7 @@ public class TilePainter : MonoBehaviour{
 	}
 
 	public void Restore(){
-		BoxCollider bounds = this.GetComponent<BoxCollider>();
-		bounds.center = new Vector3((width*gridsize)*0.5f-gridsize*0.5f, 0f, (height*gridsize)*0.5f-gridsize*0.5f);
-		bounds.size = new Vector3(width*gridsize, 0f, (height*gridsize));
+
 
 		GameObject.DestroyImmediate(GameObject.Find("palette"));
 		GameObject pal = new GameObject("palette");
@@ -78,6 +78,12 @@ public class TilePainter : MonoBehaviour{
 		}
 		for (int i = 0; i < trash.Count; i++){
 			if (Application.isPlaying){Destroy(trash[i]);} else {DestroyImmediate(trash[i]);}}	
+
+		if (color == null){
+			if (palette.Length > 0){
+				color = palette[0];
+			}
+		}
 	}
 
 	public void Resize(){
@@ -97,6 +103,9 @@ public class TilePainter : MonoBehaviour{
 
 	void OnValidate(){
 		_changed = true;
+		BoxCollider bounds = this.GetComponent<BoxCollider>();
+		bounds.center = new Vector3((width*gridsize)*0.5f-gridsize*0.5f, 0f, (height*gridsize)*0.5f-gridsize*0.5f);
+		bounds.size = new Vector3(width*gridsize, 0f, (height*gridsize));
 	}
 
 	public Vector3 GridV3(Vector3 pos){
@@ -193,6 +202,13 @@ public class TilePainter : MonoBehaviour{
 
 	public override void OnInspectorGUI () {
 		TilePainter me = (TilePainter)target;
+		GUILayout.Label("Assign a prefab to the color property"); 
+		GUILayout.Label("or the pallete array.");
+		GUILayout.Label("drag        : paint tiles");
+		GUILayout.Label("[s]+click  : sample tile color");
+		GUILayout.Label("[x]+drag  : erase tiles");
+		GUILayout.Label("[space]    : rotate tile");
+		GUILayout.Label("[b]          : cycle color");
 		if(GUILayout.Button("CLEAR")){
 			me.Clear();}
 		DrawDefaultInspector();}
