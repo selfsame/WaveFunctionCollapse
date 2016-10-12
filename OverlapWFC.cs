@@ -1,7 +1,10 @@
 using System;
 using UnityEngine;
-using UnityEditor;
 using System.Collections.Generic;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 
 class OverlapWFC : MonoBehaviour{
 	public Training training = null;
@@ -23,6 +26,27 @@ class OverlapWFC : MonoBehaviour{
 	public GameObject[,] rendering;
 	public GameObject output;
 
+	public static bool IsPrefabRef(UnityEngine.Object o){
+		#if UNITY_EDITOR
+		return PrefabUtility.GetPrefabParent(o) == null && PrefabUtility.GetPrefabObject(o) != null;
+		#endif
+		return true;
+	}
+
+	static GameObject CreatePrefab(UnityEngine.Object fab, Vector3 pos, Quaternion rot) {
+		#if UNITY_EDITOR
+		GameObject e = PrefabUtility.InstantiatePrefab(fab as GameObject) as GameObject; 
+		e.transform.position = pos;
+		e.transform.rotation = rot;
+		return e;
+		#endif
+		GameObject o = GameObject.Instantiate(fab as GameObject) as GameObject; 
+		o.transform.position = pos;
+		o.transform.rotation = rot;
+		return o;
+	}
+
+
 	void Start(){
 		Generate();
 		Run();
@@ -36,18 +60,30 @@ class OverlapWFC : MonoBehaviour{
 
 	public void Generate() {
 		if (training == null){Debug.Log("Can't Generate: no designated Training component");}
+		if (IsPrefabRef(training.gameObject)){
+
+			GameObject o = CreatePrefab(training.gameObject, new Vector3(0,0,99999f), Quaternion.identity);
+			training = o.GetComponent<Training>();
+		}
 		if (training.sample == null){
 			training.Compile();
 		}
-		DestroyImmediate(output);
-		output = new GameObject("output-OverlapModel");
+		if (output == null){
+			output = new GameObject("overlap-"+training.gameObject.name);
+			output.transform.parent = transform;}
+		foreach (Transform child in output.transform) {
+			if (Application.isPlaying){Destroy(child.gameObject);} else {DestroyImmediate(child.gameObject);}	
+		 }
+		output.transform.position = this.gameObject.transform.position;
+		output.transform.rotation = this.gameObject.transform.rotation;
 		rendering = new GameObject[width, depth];
 		model = new OverlappingModel(training.sample, N, width, depth, periodicInput, periodicOutput, symmetry, foundation);
 	}
 
 	void OnDrawGizmos(){
 		Gizmos.color = Color.cyan;
-		Gizmos.DrawWireCube(transform.position + new Vector3(width*gridsize/2, 0, depth*gridsize/2),new Vector3(width*gridsize, gridsize, depth*gridsize));
+		Gizmos.matrix = transform.localToWorldMatrix;
+		Gizmos.DrawWireCube(new Vector3(width*gridsize/2f-gridsize*0.5f, 0, depth*gridsize/2f-gridsize*0.5f),new Vector3(width*gridsize, gridsize, depth*gridsize));
 		if (incremental) {
 			if (model != null){
 				model.Run(1, 5);
@@ -56,6 +92,7 @@ class OverlapWFC : MonoBehaviour{
 		}
 	}
 	public void Run(){
+		if (model == null){return;}
 		if (model.Run(seed, iterations)){
 			Draw();
 		}
@@ -73,9 +110,12 @@ class OverlapWFC : MonoBehaviour{
 						int rot = (int)training.RS[v];
 						GameObject fab = training.tiles[v] as GameObject;
 						if (fab != null){
-							GameObject tile = (GameObject)Instantiate(fab, pos +this.gameObject.transform.position , Quaternion.identity);
+							GameObject tile = (GameObject)Instantiate(fab, new Vector3() , Quaternion.identity);
+							Vector3 fscale = tile.transform.localScale;
 							tile.transform.parent = output.transform;
-							tile.transform.eulerAngles = new Vector3(0, rot*90, 0);
+							tile.transform.localPosition = pos;
+							tile.transform.localEulerAngles = new Vector3(0, rot*90, 0);
+							tile.transform.localScale = fscale;
 							rendering[x,y] = tile;
 						}
 					}
@@ -87,6 +127,7 @@ class OverlapWFC : MonoBehaviour{
 	}
 }
 
+ #if UNITY_EDITOR
 [CustomEditor (typeof(OverlapWFC))]
 public class WFCGeneratorEditor : Editor {
 	public override void OnInspectorGUI () {
@@ -104,3 +145,4 @@ public class WFCGeneratorEditor : Editor {
 		DrawDefaultInspector ();
 	}
 }
+#endif

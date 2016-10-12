@@ -1,7 +1,9 @@
 using System;
 using System.IO;
 using UnityEngine;
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 using System.Collections.Generic;
 
 class Training : MonoBehaviour{
@@ -36,13 +38,13 @@ class Training : MonoBehaviour{
 					if (!neighbors.ContainsKey(key) && tiles[idx] && tiles[ridx]){
 						neighbors.Add(key, new int[] {idx, rot, ridx, rrot});
 						Debug.DrawLine(
-							new Vector3((x+0f)*gridsize, 1f, (y+0f)*gridsize)+this.gameObject.transform.position, 
-							new Vector3((x+1f-r)*gridsize, 1f, (y+0f+r)*gridsize)+this.gameObject.transform.position, Color.red, 9.0f, false);
+							transform.TransformPoint(new Vector3((x+0f)*gridsize, 1f, (y+0f)*gridsize)), 
+							transform.TransformPoint(new Vector3((x+1f-r)*gridsize, 1f, (y+0f+r)*gridsize)), Color.red, 9.0f, false);
 					}
 				}
 			}
 		}
-		 System.IO.File.WriteAllText("./Assets/"+this.gameObject.name+".xml", NeighborXML());
+		 System.IO.File.WriteAllText(Application.dataPath+"/"+this.gameObject.name+".xml", NeighborXML());
 	}
 
 	public string NeighborXML(){
@@ -53,18 +55,18 @@ class Training : MonoBehaviour{
 			if (o && !counts.ContainsKey(o)){
 				counts[o] = 1;
 				string sym = "X";
-				string nombre = o.name;
-				string last = nombre.Substring(nombre.Length - 1);
+				string last = o.name.Substring(o.name.Length - 1);
 				if (last == "X" || last == "I" || last == "L" || last == "T" || last == "/"){
 					sym = last;
 				}
-				res += "<tile name=\""+nombre+"\" symmetry=\""+sym+"\" weight=\""+weights[i]+"\"/>\n";
+				res += "<tile name=\""+o.name+"\" symmetry=\""+sym+"\" weight=\""+weights[i]+"\"/>\n";
 			}
 		}
 		res += "	</tiles>\n<neighbors>";
 		Dictionary<string, int[]>.ValueCollection v = neighbors.Values;
 		foreach( int[] link in v ) {
-	    	res += "  <neighbor left=\""+tiles[link[0]].name+" "+link[1]+"\" right=\""+tiles[link[2]].name+" "+link[3]+"\"/>\n";
+	    	res += "  <neighbor left=\""+tiles[link[0]].name+" "+link[1]+
+	    					"\" right=\""+tiles[link[2]].name+" "+link[3]+"\"/>\n";
 		}
 		return res + "	</neighbors>\n</set>";
 	}
@@ -96,11 +98,14 @@ class Training : MonoBehaviour{
 			
 			if ((tilepos.x > -0.55f) && (tilepos.x <= width*gridsize-0.55f) &&
 				  (tilepos.z > -0.55f) && (tilepos.z <= depth*gridsize-0.55f)){
-
-				UnityEngine.Object fab = PrefabUtility.GetPrefabParent(tile);
+				UnityEngine.Object fab = tile;
+				#if UNITY_EDITOR
+				fab = PrefabUtility.GetPrefabParent(tile);
+				tile.name = fab.name;
+				#endif
 				int X = (int)(tilepos.x) / gridsize;
 				int Y = (int)(tilepos.z) / gridsize;
-				int R = (int)(tile.transform.eulerAngles.y)/ 90;
+				int R = (int)(tile.transform.localEulerAngles.y)/ 90;
 				if (R == 4) {R = 0;};
 				if (!str_tile.ContainsKey(fab.name+R)){
 					int index = str_tile.Count+1;
@@ -120,8 +125,9 @@ class Training : MonoBehaviour{
 	}
 
 	void OnDrawGizmos(){
+		Gizmos.matrix = transform.localToWorldMatrix;
 		Gizmos.color = Color.magenta;
-		Gizmos.DrawWireCube(transform.position + new Vector3((width*gridsize/2f)-gridsize*0.5f, 0, (depth*gridsize/2f)-gridsize*0.5f),
+		Gizmos.DrawWireCube(new Vector3((width*gridsize/2f)-gridsize*0.5f, 0, (depth*gridsize/2f)-gridsize*0.5f),
 							new Vector3(width*gridsize, gridsize, depth*gridsize));
 		Gizmos.color = Color.cyan;
 		for (int i = 0; i < this.transform.childCount; i++){
@@ -129,13 +135,13 @@ class Training : MonoBehaviour{
 			Vector3 tilepos = tile.transform.localPosition;
 			if ((tilepos.x > -0.55f) && (tilepos.x <= width*gridsize-0.55f) &&
 				(tilepos.z > -0.55f) && (tilepos.z <= depth*gridsize-0.55f)){
-				Gizmos.DrawSphere(this.transform.position + tilepos, gridsize*0.2f);
+				Gizmos.DrawSphere(tilepos, gridsize*0.2f);
 			}
 		}
 	}
 }
 
-
+#if UNITY_EDITOR
 [CustomEditor (typeof(Training))]
 public class TrainingEditor : Editor {
 	public override void OnInspectorGUI () {
@@ -149,3 +155,4 @@ public class TrainingEditor : Editor {
 		DrawDefaultInspector ();
 	}
 }
+#endif

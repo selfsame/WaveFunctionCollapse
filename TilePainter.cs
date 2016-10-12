@@ -1,9 +1,10 @@
 using System;
 using System.Collections;
 using UnityEngine;
-using UnityEditor;
 using System.Collections.Generic;
-
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 [RequireComponent(typeof(BoxCollider))]
 public class TilePainter : MonoBehaviour{
@@ -24,7 +25,7 @@ public class TilePainter : MonoBehaviour{
 	Quaternion color_rotation;
 
 	
-
+#if UNITY_EDITOR
 
 	public void Encode(){
 
@@ -49,10 +50,11 @@ public class TilePainter : MonoBehaviour{
 
 		pal.transform.parent = this.gameObject.transform;
 		pal.transform.localPosition = new Vector3(0f,0f, -gridsize*2);
+		pal.transform.rotation = transform.rotation;
 		for (int i = 0; i < palette.Length; i++){
 			UnityEngine.Object o = palette[i];
 			if (o != null){
-				GameObject g = CreatePrefab(o, new Vector3() , Quaternion.identity);
+				GameObject g = CreatePrefab(o, new Vector3() , transform.rotation);
 				g.transform.parent = pal.transform;
 				g.transform.localPosition = new Vector3(i*gridsize, 0f, 0f);
 			}
@@ -88,6 +90,7 @@ public class TilePainter : MonoBehaviour{
 	}
 
 	public void Resize(){
+		transform.localScale = new Vector3(1,1,1);
 		if (_changed){
 			_changed = false;
 			Restore(); 
@@ -110,7 +113,7 @@ public class TilePainter : MonoBehaviour{
 	}
 
 	public Vector3 GridV3(Vector3 pos){
-		Vector3 p = pos - this.gameObject.transform.position + new Vector3(gridsize*0.5f,0f,gridsize*0.5f);
+		Vector3 p = transform.InverseTransformPoint(pos) + new Vector3(gridsize*0.5f,0f,gridsize*0.5f);
 		return new Vector3((int)(p.x/gridsize), 0, (int)(p.z/gridsize));
 	}
 
@@ -150,7 +153,7 @@ public class TilePainter : MonoBehaviour{
 				UnityEngine.Object s = PrefabUtility.GetPrefabParent(tileobs[(int)cursor.x, (int)cursor.z]);
 				if (s != null){
 					color = s;
-					color_rotation = tileobs[(int)cursor.x, (int)cursor.z].transform.rotation;
+					color_rotation = tileobs[(int)cursor.x, (int)cursor.z].transform.localRotation;
 				}
 			} else {
 				DestroyImmediate(tileobs[(int)cursor.x, (int)cursor.z]); 
@@ -158,7 +161,8 @@ public class TilePainter : MonoBehaviour{
 					if (color == null){return;}
 					GameObject o = CreatePrefab(color, new Vector3() , color_rotation);
 					o.transform.parent = tiles.transform;
-					o.transform.position = (cursor*gridsize)+this.gameObject.transform.position;
+					o.transform.localPosition = (cursor*gridsize);
+					o.transform.localRotation = color_rotation;
 					tileobs[(int)cursor.x, (int)cursor.z] = o;
 				}
 			}
@@ -182,21 +186,23 @@ public class TilePainter : MonoBehaviour{
 
 	public void OnDrawGizmos(){
 		Gizmos.color = Color.white;
-
+		Gizmos.matrix = transform.localToWorldMatrix;
 		if (focused){
 			Gizmos.color = new Color(1f,0f,0f,0.6f);
-			Gizmos.DrawRay(Local(cursor*gridsize)+Vector3.forward*-49999f, Vector3.forward*99999f);
-			Gizmos.DrawRay(Local(cursor*gridsize)+Vector3.right*-49999f, Vector3.right*99999f);
-			Gizmos.DrawRay(Local(cursor*gridsize)+Vector3.up*-49999f, Vector3.up*99999f);
+			Gizmos.DrawRay((cursor*gridsize)+Vector3.forward*-49999f, Vector3.forward*99999f);
+			Gizmos.DrawRay((cursor*gridsize)+Vector3.right*-49999f, Vector3.right*99999f);
+			Gizmos.DrawRay((cursor*gridsize)+Vector3.up*-49999f, Vector3.up*99999f);
 			Gizmos.color = Color.yellow;
 		}
 
-		Gizmos.DrawWireCube(transform.position + new Vector3((width*gridsize)*0.5f-gridsize*0.5f, 0f, (height*gridsize)*0.5f-gridsize*0.5f),
+		Gizmos.DrawWireCube( new Vector3((width*gridsize)*0.5f-gridsize*0.5f, 0f, (height*gridsize)*0.5f-gridsize*0.5f),
 			new Vector3(width*gridsize, 0f, (height*gridsize)));
 	}
+	#endif
 }
  
 
+#if UNITY_EDITOR
  [CustomEditor(typeof(TilePainter))]
  public class TileLayerEditor : Editor{
  	public enum TileOperation {None, Drawing, Erasing, Sampling};
@@ -304,6 +310,6 @@ public class TilePainter : MonoBehaviour{
 	     Handles.BeginGUI();
 	     Handles.EndGUI();
 	 }}
-
+#endif
 
 

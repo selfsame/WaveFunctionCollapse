@@ -1,9 +1,10 @@
 using System;
 using System.Collections;
 using UnityEngine;
-using UnityEditor;
 using System.Collections.Generic;
-
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 public class SimpleTiledWFC : MonoBehaviour{
 	
@@ -43,14 +44,16 @@ public class SimpleTiledWFC : MonoBehaviour{
 
 
 	public void Run(){
+		if (model == null){return;}
 		if (model.Run(seed, iterations)){
 			Draw();
 		}
 	}
 
 	public void OnDrawGizmos(){
+		Gizmos.matrix = transform.localToWorldMatrix;
 		Gizmos.color = Color.magenta;
-		Gizmos.DrawWireCube(transform.position + new Vector3(width*gridsize/2, 0, depth*gridsize/2),new Vector3(width*gridsize, gridsize, depth*gridsize));
+		Gizmos.DrawWireCube(new Vector3(width*gridsize/2f-gridsize*0.5f, 0, depth*gridsize/2f-gridsize*0.5f),new Vector3(width*gridsize, gridsize, depth*gridsize));
 		if (incremental) {
 			if (model != null){
 				model.Run(1, 5);
@@ -61,10 +64,17 @@ public class SimpleTiledWFC : MonoBehaviour{
 
 	public void Generate(){
 		obmap = new  Dictionary<string, GameObject>();
-		DestroyImmediate(output);
-		output = new GameObject("output-SimpleTiledModel");
+		if (output == null){
+			output = new GameObject("tiled-"+xmlpath);
+			output.transform.parent = transform;}
+		foreach (Transform child in output.transform) {
+			if (Application.isPlaying){Destroy(child.gameObject);} else {DestroyImmediate(child.gameObject);}	
+		}
+
+		output.transform.position = this.gameObject.transform.position;
+		output.transform.rotation = this.gameObject.transform.rotation;
 		rendering = new GameObject[width, depth];
-		this.model = new SimpleTiledModel(xmlpath, subset, width, depth, periodic);
+		this.model = new SimpleTiledModel(Application.dataPath+"/"+xmlpath, subset, width, depth, periodic);
 	}
 
 	public void Draw(){
@@ -74,34 +84,35 @@ public class SimpleTiledWFC : MonoBehaviour{
 				if (rendering[x,y] == null){
 					string v = model.Sample(x, y);
 					int rot = 0;
-					
 					GameObject fab = null;
 					if (v != "?"){
 						rot = int.Parse(v.Substring(0,1));
 						v = v.Substring(1);
 						if (!obmap.ContainsKey(v)){
-							fab = (GameObject)Resources.Load("tiles/"+v, typeof(GameObject));
-							if (fab == null) {
-								fab = (GameObject)Resources.Load("tiles/_", typeof(GameObject));}
+							fab = (GameObject)Resources.Load(v, typeof(GameObject));
 							obmap[v] = fab;
 						} else {
 							fab = obmap[v];
 						}
-						
+						if (fab == null){
+							Debug.Log(v);
+							continue;}
 						Vector3 pos = new Vector3(x*gridsize, 0, y*gridsize);
-						GameObject tile = (GameObject)Instantiate(fab, pos +this.gameObject.transform.position , Quaternion.identity);
+						GameObject tile = (GameObject)Instantiate(fab, new Vector3() , Quaternion.identity);
+						Vector3 fscale = tile.transform.localScale;
 						tile.transform.parent = output.transform;
-						tile.transform.eulerAngles = new Vector3(0, 360-(rot*-90), 0);
+						tile.transform.localPosition = pos;
+						tile.transform.localEulerAngles = new Vector3(0, rot*90, 0);
+						tile.transform.localScale = fscale;
 						rendering[x,y] = tile;
 					}
-
-
 				}
 			}
   		}	
 	}
 }
 
+#if UNITY_EDITOR
 [CustomEditor (typeof(SimpleTiledWFC))]
 public class TileSetEditor : Editor {
 	public override void OnInspectorGUI () {
@@ -121,3 +132,4 @@ public class TileSetEditor : Editor {
 		DrawDefaultInspector ();
 	}
 }
+#endif
