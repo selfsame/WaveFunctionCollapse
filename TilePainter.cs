@@ -39,23 +39,25 @@ public class TilePainter : MonoBehaviour{
 	public void Restore(){
 		GameObject.DestroyImmediate(GameObject.Find("palette"));
 		GameObject pal = new GameObject("palette");
+		pal.hideFlags = HideFlags.HideInHierarchy;
 		BoxCollider bc = pal.AddComponent<BoxCollider>();
 		bc.size = new Vector3(palette.Length*gridsize, 0f, gridsize);
 		bc.center = new Vector3((palette.Length-1f)*gridsize*0.5f, 0f, 0f);
 
 		pal.transform.parent = this.gameObject.transform;
-		pal.transform.position = new Vector3(0f,0f, -gridsize*2);
+		pal.transform.localPosition = new Vector3(0f,0f, -gridsize*2);
 		for (int i = 0; i < palette.Length; i++){
 			UnityEngine.Object o = palette[i];
 			if (o != null){
-				GameObject g = CreatePrefab(o, new Vector3(i*gridsize, 0f, -gridsize*2) , Quaternion.identity);
+				GameObject g = CreatePrefab(o, new Vector3() , Quaternion.identity);
 				g.transform.parent = pal.transform;
+				g.transform.localPosition = new Vector3(i*gridsize, 0f, 0f);
 			}
 		}
+
 		tileobs = new GameObject[width, height];
 		if (tiles == null){
 			tiles = new GameObject("tiles");
-			tiles.hideFlags = HideFlags.HideInInspector;
 			tiles.transform.parent = this.gameObject.transform;
 		}
 		int cnt = tiles.transform.childCount;
