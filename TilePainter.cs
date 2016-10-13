@@ -40,8 +40,8 @@ public class TilePainter : MonoBehaviour{
 
 	public void Restore(){
 
-
-		GameObject.DestroyImmediate(GameObject.Find("palette"));
+		Transform palt = transform.Find("palette");
+		if (palt != null){GameObject.DestroyImmediate(palt.gameObject);}
 		GameObject pal = new GameObject("palette");
 		pal.hideFlags = HideFlags.HideInHierarchy;
 		BoxCollider bc = pal.AddComponent<BoxCollider>();

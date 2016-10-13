@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using UnityEditor;
 #endif
 
-
+[ExecuteInEditMode]
 class OverlapWFC : MonoBehaviour{
 	public Training training = null;
 
@@ -25,6 +25,7 @@ class OverlapWFC : MonoBehaviour{
 
 	public GameObject[,] rendering;
 	public GameObject output;
+	private Transform group;
 
 	public static bool IsPrefabRef(UnityEngine.Object o){
 		#if UNITY_EDITOR
@@ -68,14 +69,31 @@ class OverlapWFC : MonoBehaviour{
 		if (training.sample == null){
 			training.Compile();
 		}
+
+		if (group != null){
+			if (Application.isPlaying){DestroyImmediate(group.gameObject);} else {
+				DestroyImmediate(group.gameObject);
+			}	
+		}
+
+
 		if (output == null){
-			output = new GameObject("overlap-"+training.gameObject.name);
-			output.transform.parent = transform;}
-		foreach (Transform child in output.transform) {
-			if (Application.isPlaying){Destroy(child.gameObject);} else {DestroyImmediate(child.gameObject);}	
-		 }
-		output.transform.position = this.gameObject.transform.position;
-		output.transform.rotation = this.gameObject.transform.rotation;
+			Transform ot = transform.Find("output-overlap");
+			if (ot != null){output = ot.gameObject;}}
+		if (output == null){
+			output = new GameObject("output-overlap");
+			output.transform.parent = transform;
+			output.transform.position = this.gameObject.transform.position;
+			output.transform.rotation = this.gameObject.transform.rotation;}
+		group = output.transform.Find(training.gameObject.name);
+		if (group == null){
+			group = new GameObject(training.gameObject.name).transform;
+			group.parent = output.transform;
+			group.position = output.transform.position;
+			group.rotation = output.transform.rotation;}		
+
+
+
 		rendering = new GameObject[width, depth];
 		model = new OverlappingModel(training.sample, N, width, depth, periodicInput, periodicOutput, symmetry, foundation);
 	}
@@ -98,8 +116,13 @@ class OverlapWFC : MonoBehaviour{
 		}
 	}
 
+	public void OnGUI(){
+		Run();
+	}
+
 	public void Draw(){
 		if (output == null){return;}
+		if (group == null){return;}
 		for (int y = 0; y < depth; y++){
 			for (int x = 0; x < width; x++){
 				if (rendering[x,y] == null){
@@ -112,7 +135,7 @@ class OverlapWFC : MonoBehaviour{
 						if (fab != null){
 							GameObject tile = (GameObject)Instantiate(fab, new Vector3() , Quaternion.identity);
 							Vector3 fscale = tile.transform.localScale;
-							tile.transform.parent = output.transform;
+							tile.transform.parent = group;
 							tile.transform.localPosition = pos;
 							tile.transform.localEulerAngles = new Vector3(0, rot*90, 0);
 							tile.transform.localScale = fscale;

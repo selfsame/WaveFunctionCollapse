@@ -235,10 +235,10 @@ class OverlappingModel : Model
 		{
 			for (int x = 0; x < FMX; x++)
 			{
-				for (int t = 0; t < T; t++) if (t != foundation) wave[x][FMY - 1][t] = false;
-				changes[x][FMY - 1] = true;
+				for (int t = 0; t < T; t++) if (t != foundation) wave[x][0][t] = false;
+				changes[x][0] = true;
 
-				for (int y = 0; y < FMY - 1; y++)
+				for (int y = 2; y < FMY; y++)
 				{
 					wave[x][y][foundation] = false;
 					changes[x][y] = true;

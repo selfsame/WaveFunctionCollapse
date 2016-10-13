@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using UnityEditor;
 #endif
 
+[ExecuteInEditMode]
 public class SimpleTiledWFC : MonoBehaviour{
 	
 	public string xmlpath = null;
@@ -23,6 +24,7 @@ public class SimpleTiledWFC : MonoBehaviour{
 	public SimpleTiledModel model = null;
 	public GameObject[,] rendering;
 	public GameObject output;
+	private Transform group;
 	public Dictionary<string, GameObject> obmap = new Dictionary<string, GameObject>();
 
 	public void destroyChildren (){
@@ -64,21 +66,36 @@ public class SimpleTiledWFC : MonoBehaviour{
 
 	public void Generate(){
 		obmap = new  Dictionary<string, GameObject>();
-		if (output == null){
-			output = new GameObject("tiled-"+xmlpath);
-			output.transform.parent = transform;}
-		foreach (Transform child in output.transform) {
-			if (Application.isPlaying){Destroy(child.gameObject);} else {DestroyImmediate(child.gameObject);}	
-		}
 
-		output.transform.position = this.gameObject.transform.position;
-		output.transform.rotation = this.gameObject.transform.rotation;
+		if (group != null){
+			if (Application.isPlaying){DestroyImmediate(group.gameObject);} else {
+				DestroyImmediate(group.gameObject);
+			}	
+		}	
+
+		if (output == null){
+			Transform ot = transform.Find("output-tiled");
+			if (ot != null){output = ot.gameObject;}}
+		if (output == null){
+			output = new GameObject("output-tiled");
+			output.transform.parent = transform;
+			output.transform.position = this.gameObject.transform.position;
+			output.transform.rotation = this.gameObject.transform.rotation;}
+		group = output.transform.Find(xmlpath);
+
+		if (group == null){
+			group = new GameObject(xmlpath).transform;
+			group.parent = output.transform;
+			group.position = output.transform.position;
+			group.rotation = output.transform.rotation;}	
+
 		rendering = new GameObject[width, depth];
 		this.model = new SimpleTiledModel(Application.dataPath+"/"+xmlpath, subset, width, depth, periodic);
 	}
 
 	public void Draw(){
 		if (output == null){return;}
+		if (group == null){return;}
 		for (int y = 0; y < depth; y++){
 			for (int x = 0; x < width; x++){ 
 				if (rendering[x,y] == null){
@@ -95,12 +112,11 @@ public class SimpleTiledWFC : MonoBehaviour{
 							fab = obmap[v];
 						}
 						if (fab == null){
-							Debug.Log(v);
 							continue;}
 						Vector3 pos = new Vector3(x*gridsize, 0, y*gridsize);
 						GameObject tile = (GameObject)Instantiate(fab, new Vector3() , Quaternion.identity);
 						Vector3 fscale = tile.transform.localScale;
-						tile.transform.parent = output.transform;
+						tile.transform.parent = group;
 						tile.transform.localPosition = pos;
 						tile.transform.localEulerAngles = new Vector3(0, rot*90, 0);
 						tile.transform.localScale = fscale;
