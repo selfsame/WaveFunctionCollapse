@@ -101,6 +101,18 @@ class Training : MonoBehaviour{
 				UnityEngine.Object fab = tile;
 				#if UNITY_EDITOR
 				fab = PrefabUtility.GetPrefabParent(tile);
+				if (fab == null){
+					PrefabUtility.ReconnectToLastPrefab(tile);
+					fab = PrefabUtility.GetPrefabParent(tile);
+				}
+				if (fab == null){
+					fab = (GameObject)Resources.Load(tile.name);
+					if (fab){
+						tile = PrefabUtility.ConnectGameObjectToPrefab(tile, (GameObject)fab);
+					}else{
+						fab = tile;}
+				}
+
 				tile.name = fab.name;
 				#endif
 				int X = (int)(tilepos.x) / gridsize;
