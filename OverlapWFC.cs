@@ -20,9 +20,7 @@ class OverlapWFC : MonoBehaviour{
 	public int foundation = 0;
 	public int iterations = 0;
 	public bool incremental = false;
-
 	public OverlappingModel model = null;
-
 	public GameObject[,] rendering;
 	public GameObject output;
 	private Transform group;
@@ -47,10 +45,19 @@ class OverlapWFC : MonoBehaviour{
 		return o;
 	}
 
+	public void Clear(){
+		if (group != null){
+			if (Application.isPlaying){Destroy(group.gameObject);} else {
+				DestroyImmediate(group.gameObject);
+			}	
+			group = null;
+		}
+	}
+
+	void Awake(){}
 
 	void Start(){
 		Generate();
-		Run();
 	}
 
 	void Update(){
@@ -62,20 +69,12 @@ class OverlapWFC : MonoBehaviour{
 	public void Generate() {
 		if (training == null){Debug.Log("Can't Generate: no designated Training component");}
 		if (IsPrefabRef(training.gameObject)){
-
 			GameObject o = CreatePrefab(training.gameObject, new Vector3(0,0,99999f), Quaternion.identity);
 			training = o.GetComponent<Training>();
 		}
 		if (training.sample == null){
 			training.Compile();
 		}
-
-		if (group != null){
-			if (Application.isPlaying){DestroyImmediate(group.gameObject);} else {
-				DestroyImmediate(group.gameObject);
-			}	
-		}
-
 
 		if (output == null){
 			Transform ot = transform.Find("output-overlap");
@@ -85,14 +84,14 @@ class OverlapWFC : MonoBehaviour{
 			output.transform.parent = transform;
 			output.transform.position = this.gameObject.transform.position;
 			output.transform.rotation = this.gameObject.transform.rotation;}
-		group = output.transform.Find(training.gameObject.name);
-		if (group == null){
-			group = new GameObject(training.gameObject.name).transform;
-			group.parent = output.transform;
-			group.position = output.transform.position;
-			group.rotation = output.transform.rotation;}		
-
-
+		for (int i = 0; i < output.transform.childCount; i++){
+			GameObject go = output.transform.GetChild(i).gameObject;
+			if (Application.isPlaying){Destroy(go);} else {DestroyImmediate(go);}
+		}
+		group = new GameObject(training.gameObject.name).transform;
+		group.parent = output.transform;
+		group.position = output.transform.position;
+		group.rotation = output.transform.rotation;
 
 		rendering = new GameObject[width, depth];
 		model = new OverlappingModel(training.sample, N, width, depth, periodicInput, periodicOutput, symmetry, foundation);
@@ -109,6 +108,7 @@ class OverlapWFC : MonoBehaviour{
 			}
 		}
 	}
+
 	public void Run(){
 		if (model == null){return;}
 		if (model.Run(seed, iterations)){
@@ -116,37 +116,38 @@ class OverlapWFC : MonoBehaviour{
 		}
 	}
 
-	public void OnGUI(){
-		Run();
-	}
-
 	public void Draw(){
 		if (output == null){return;}
 		if (group == null){return;}
-		for (int y = 0; y < depth; y++){
-			for (int x = 0; x < width; x++){
-				if (rendering[x,y] == null){
-					int v = (int)model.Sample(x, y);
+		try{
+			for (int y = 0; y < depth; y++){
+				for (int x = 0; x < width; x++){
+					if (rendering[x,y] == null){
+						int v = (int)model.Sample(x, y);
 
-					if (v != 99 && v < training.tiles.Length){
-						Vector3 pos = new Vector3(x*gridsize, 0, y*gridsize);
-						int rot = (int)training.RS[v];
-						GameObject fab = training.tiles[v] as GameObject;
-						if (fab != null){
-							GameObject tile = (GameObject)Instantiate(fab, new Vector3() , Quaternion.identity);
-							Vector3 fscale = tile.transform.localScale;
-							tile.transform.parent = group;
-							tile.transform.localPosition = pos;
-							tile.transform.localEulerAngles = new Vector3(0, rot*90, 0);
-							tile.transform.localScale = fscale;
-							rendering[x,y] = tile;
+						if (v != 99 && v < training.tiles.Length){
+							Vector3 pos = new Vector3(x*gridsize, 0, y*gridsize);
+							int rot = (int)training.RS[v];
+							GameObject fab = training.tiles[v] as GameObject;
+							if (fab != null){
+								GameObject tile = (GameObject)Instantiate(fab, new Vector3() , Quaternion.identity);
+								Vector3 fscale = tile.transform.localScale;
+								tile.transform.parent = group;
+								tile.transform.localPosition = pos;
+								tile.transform.localEulerAngles = new Vector3(0, rot*90, 0);
+								tile.transform.localScale = fscale;
+								rendering[x,y] = tile;
+							}
 						}
+
+
 					}
-
-
 				}
-			}
-  		}	
+	  		}
+	  	} catch (IndexOutOfRangeException e) {
+	  		model = null;
+	  		return;
+	  	}
 	}
 }
 

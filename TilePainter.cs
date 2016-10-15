@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Collections;
 using UnityEngine;
 using System.Collections.Generic;
@@ -19,13 +20,27 @@ public class TilePainter : MonoBehaviour{
 	public GameObject[,] tileobs;
 	
 
-	int colidx = 0; 
-	public UnityEngine.Object[] palette = new UnityEngine.Object[0];
+	int colidx = 0;
+	public List<UnityEngine.Object> palette = new List<UnityEngine.Object>();
 	public UnityEngine.Object color = null;
 	Quaternion color_rotation;
 
 	
 #if UNITY_EDITOR
+
+	private static bool IsAssetAFolder(UnityEngine.Object obj){
+		string path = "";
+		if (obj == null){return false;}
+		path = AssetDatabase.GetAssetPath(obj.GetInstanceID());
+		if (path.Length > 0){
+		if (Directory.Exists(path)){
+			return true;
+		}else{
+			return false;}
+		}
+	 	return false;
+	}
+ 
 
 	public void Encode(){
 
@@ -33,6 +48,9 @@ public class TilePainter : MonoBehaviour{
 
 	static GameObject CreatePrefab(UnityEngine.Object fab, Vector3 pos, Quaternion rot) {	
 		GameObject o = PrefabUtility.InstantiatePrefab(fab as GameObject) as GameObject; 
+		if (o == null){
+			Debug.Log(IsAssetAFolder(fab));
+			return o;}
 		o.transform.position = pos;
 		o.transform.rotation = rot;
 		return o;
@@ -45,21 +63,42 @@ public class TilePainter : MonoBehaviour{
 		GameObject pal = new GameObject("palette");
 		pal.hideFlags = HideFlags.HideInHierarchy;
 		BoxCollider bc = pal.AddComponent<BoxCollider>();
-		bc.size = new Vector3(palette.Length*gridsize, 0f, gridsize);
-		bc.center = new Vector3((palette.Length-1f)*gridsize*0.5f, 0f, 0f);
+		bc.size = new Vector3(palette.Count*gridsize, 0f, gridsize);
+		bc.center = new Vector3((palette.Count-1f)*gridsize*0.5f, 0f, 0f);
 
 		pal.transform.parent = this.gameObject.transform;
 		pal.transform.localPosition = new Vector3(0f,0f, -gridsize*2);
 		pal.transform.rotation = transform.rotation;
-		for (int i = 0; i < palette.Length; i++){
+
+
+		
+		int palette_folder = -1;
+
+		for (int i = 0; i < palette.Count; i++){
 			UnityEngine.Object o = palette[i];
-			if (o != null){
-				GameObject g = CreatePrefab(o, new Vector3() , transform.rotation);
-				g.transform.parent = pal.transform;
-				g.transform.localPosition = new Vector3(i*gridsize, 0f, 0f);
+			if (IsAssetAFolder(o)){
+				palette_folder = i;
+			}
+			else {
+				if (o != null){
+					GameObject g = CreatePrefab(o, new Vector3() , transform.rotation);
+					g.transform.parent = pal.transform;
+					g.transform.localPosition = new Vector3(i*gridsize, 0f, 0f);
+				}
 			}
 		}
 
+		if (palette_folder != -1){
+			string path = AssetDatabase.GetAssetPath(palette[palette_folder].GetInstanceID());
+			path = path.Trim().Replace("Assets/Resources/", "");
+			palette.RemoveAt(palette_folder);
+			UnityEngine.Object[] contents = (UnityEngine.Object[]) Resources.LoadAll(path);
+			foreach (UnityEngine.Object o in contents){
+				if (!palette.Contains(o)){palette.Add(o);}
+			}
+			Restore();
+		}
+ 
 		tileobs = new GameObject[width, height];
 		if (tiles == null){
 			tiles = new GameObject("tiles");
@@ -83,7 +122,7 @@ public class TilePainter : MonoBehaviour{
 			if (Application.isPlaying){Destroy(trash[i]);} else {DestroyImmediate(trash[i]);}}	
 
 		if (color == null){
-			if (palette.Length > 0){
+			if (palette.Count > 0){
 				color = palette[0];
 			}
 		}
@@ -126,7 +165,7 @@ public class TilePainter : MonoBehaviour{
 
 	public void CycleColor(){
 		colidx += 1;
-		if (colidx >= palette.Length){
+		if (colidx >= palette.Count){
 			colidx = 0;
 		}
 		color = (UnityEngine.Object)palette[colidx];
@@ -168,7 +207,7 @@ public class TilePainter : MonoBehaviour{
 			}
 		} else {
 			if (op == TileLayerEditor.TileOperation.Sampling){
-				if (cursor.z == -1 && cursor.x >= 0 && cursor.x < palette.Length){
+				if (cursor.z == -1 && cursor.x >= 0 && cursor.x < palette.Count){
 					color = palette[(int)cursor.x];
 					color_rotation = Quaternion.identity;
 				}
@@ -205,8 +244,8 @@ public class TilePainter : MonoBehaviour{
 #if UNITY_EDITOR
  [CustomEditor(typeof(TilePainter))]
  public class TileLayerEditor : Editor{
- 	public enum TileOperation {None, Drawing, Erasing, Sampling};
- 	private TileOperation operation;
+	public enum TileOperation {None, Drawing, Erasing, Sampling};
+	private TileOperation operation;
 
 	public override void OnInspectorGUI () {
 		TilePainter me = (TilePainter)target;
@@ -225,7 +264,7 @@ public class TilePainter : MonoBehaviour{
 		TilePainter me = (TilePainter)target;
 		RaycastHit hit;
 		if (Physics.Raycast(HandleUtility.GUIPointToWorldRay(Event.current.mousePosition), out hit, Mathf.Infinity) && 
-			 	hit.collider.GetComponentInParent<TilePainter>() == me)
+				hit.collider.GetComponentInParent<TilePainter>() == me)
 		{
 			me.cursor = me.GridV3(hit.point);
 			me.focused = true;
@@ -240,75 +279,75 @@ public class TilePainter : MonoBehaviour{
 
 	public void ProcessEvents(){
 		TilePainter me = (TilePainter)target;
-        int controlID = GUIUtility.GetControlID(1778, FocusType.Passive);
-        EditorWindow currentWindow = EditorWindow.mouseOverWindow;
-        if(currentWindow && AmHovering(Event.current)){
-            Event current = Event.current;
- 			bool leftbutton = (current.button == 0);
-            switch(current.type){
-                case EventType.keyDown:
+		int controlID = GUIUtility.GetControlID(1778, FocusType.Passive);
+		EditorWindow currentWindow = EditorWindow.mouseOverWindow;
+		if(currentWindow && AmHovering(Event.current)){
+			Event current = Event.current;
+			bool leftbutton = (current.button == 0);
+			switch(current.type){
+				case EventType.keyDown:
 
-                	if (current.keyCode == KeyCode.S) operation = TileOperation.Sampling;
-                	if (current.keyCode == KeyCode.X) operation = TileOperation.Erasing;
-                    current.Use();
-                    return;
-                case EventType.keyUp:
-                	operation = TileOperation.None;
-                	if (current.keyCode == KeyCode.Space) me.Turn();
-                	if (current.keyCode == KeyCode.B) me.CycleColor();
-                    current.Use();
-                    return;
-                case EventType.mouseDown:
-                    if (leftbutton)
-                    {
-                    	if (operation == TileOperation.None){
-                    		operation = TileOperation.Drawing;
-                    	}
-                    	me.Drag(current.mousePosition, operation);
+					if (current.keyCode == KeyCode.S) operation = TileOperation.Sampling;
+					if (current.keyCode == KeyCode.X) operation = TileOperation.Erasing;
+					current.Use();
+					return;
+				case EventType.keyUp:
+					operation = TileOperation.None;
+					if (current.keyCode == KeyCode.Space) me.Turn();
+					if (current.keyCode == KeyCode.B) me.CycleColor();
+					current.Use();
+					return;
+				case EventType.mouseDown:
+					if (leftbutton)
+					{
+						if (operation == TileOperation.None){
+							operation = TileOperation.Drawing;
+						}
+						me.Drag(current.mousePosition, operation);
 
-                        current.Use();
-                        return;
-                    }
-                    break;
-                case EventType.mouseDrag:
-                    if (leftbutton)
-                    {
-                        if (operation != TileOperation.None){
-                        	me.Drag(current.mousePosition, operation);
-                        	current.Use();
-                        }
-                        
-                        return;
-                    }
-                    break;
-                case EventType.mouseUp:
-                    if (leftbutton)
-                    {
-                    	operation = TileOperation.None;
-                        current.Use();
-                        return;
-                    }
-                break;
-                case EventType.mouseMove:
-                	me.Resize();
-                	current.Use();
-                break;
-                case EventType.repaint:
-                break;
-                case EventType.layout:
-                HandleUtility.AddDefaultControl(controlID);
-                break;
-            }
-        }
-    }
+						current.Use();
+						return;
+					}
+					break;
+				case EventType.mouseDrag:
+					if (leftbutton)
+					{
+						if (operation != TileOperation.None){
+							me.Drag(current.mousePosition, operation);
+							current.Use();
+						}
+						
+						return;
+					}
+					break;
+				case EventType.mouseUp:
+					if (leftbutton)
+					{
+						operation = TileOperation.None;
+						current.Use();
+						return;
+					}
+				break;
+				case EventType.mouseMove:
+					me.Resize();
+					current.Use();
+				break;
+				case EventType.repaint:
+				break;
+				case EventType.layout:
+				HandleUtility.AddDefaultControl(controlID);
+				break;
+			}
+		}
+	}
 	
 	void OnSceneGUI (){
-	 	ProcessEvents();
+		ProcessEvents();
 	}
 
 	 void DrawEvents(){
-	     Handles.BeginGUI();
-	     Handles.EndGUI();
+		 Handles.BeginGUI();
+		 Handles.EndGUI();
 	 }}
 #endif
 
