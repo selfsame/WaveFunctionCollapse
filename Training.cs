@@ -47,6 +47,10 @@ class Training : MonoBehaviour{
 		 System.IO.File.WriteAllText(Application.dataPath+"/"+this.gameObject.name+".xml", NeighborXML());
 	}
 
+	public string AssetPath(UnityEngine.Object o){
+		return AssetDatabase.GetAssetPath(o).Trim().Replace("Assets/Resources/", "").Replace(".prefab", "");
+	}
+
 	public string NeighborXML(){
 		Dictionary<UnityEngine.Object,int> counts = new Dictionary<UnityEngine.Object,int>();
 		string res = "<set>\n  <tiles>\n";
@@ -54,19 +58,20 @@ class Training : MonoBehaviour{
 			UnityEngine.Object o = tiles[i];
 			if (o && !counts.ContainsKey(o)){
 				counts[o] = 1;
+				string assetpath = AssetPath(o);
 				string sym = "X";
-				string last = o.name.Substring(o.name.Length - 1);
+				string last = assetpath.Substring(o.name.Length - 1);
 				if (last == "X" || last == "I" || last == "L" || last == "T" || last == "/"){
 					sym = last;
 				}
-				res += "<tile name=\""+o.name+"\" symmetry=\""+sym+"\" weight=\""+weights[i]+"\"/>\n";
+				res += "<tile name=\""+assetpath+"\" symmetry=\""+sym+"\" weight=\""+weights[i]+"\"/>\n";
 			}
 		}
 		res += "	</tiles>\n<neighbors>";
 		Dictionary<string, int[]>.ValueCollection v = neighbors.Values;
 		foreach( int[] link in v ) {
-	    	res += "  <neighbor left=\""+tiles[link[0]].name+" "+link[1]+
-	    					"\" right=\""+tiles[link[2]].name+" "+link[3]+"\"/>\n";
+	    	res += "  <neighbor left=\""+AssetPath(tiles[link[0]])+" "+link[1]+
+	    				   "\" right=\""+AssetPath(tiles[link[2]])+" "+link[3]+"\"/>\n";
 		}
 		return res + "	</neighbors>\n</set>";
 	}

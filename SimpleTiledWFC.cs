@@ -10,7 +10,7 @@ using UnityEditor;
 public class SimpleTiledWFC : MonoBehaviour{
 	
 	public string xmlpath = null;
-	public string subset = null;
+	private string subset = "";
 
 	public int gridsize = 2;
 	public int width = 20;
