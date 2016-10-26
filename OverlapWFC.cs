@@ -13,6 +13,7 @@ class OverlapWFC : MonoBehaviour{
 	public int width = 20;
 	public int depth = 20;
 	public int seed = 0;
+	[HideInInspector]
 	public int N = 2;
 	public bool periodicInput = false;
 	public bool periodicOutput = false;
