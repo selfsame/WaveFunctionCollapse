@@ -12,7 +12,7 @@ public class SimpleTiledWFC : MonoBehaviour{
 	public string xmlpath = null;
 	private string subset = "";
 
-	public int gridsize = 2;
+	public int gridsize = 1;
 	public int width = 20;
 	public int depth = 20;
 
@@ -133,7 +133,6 @@ public class SimpleTiledWFC : MonoBehaviour{
 public class TileSetEditor : Editor {
 	public override void OnInspectorGUI () {
 		SimpleTiledWFC me = (SimpleTiledWFC)target;
-
 		if (me.xmlpath != null){
 			if(GUILayout.Button("generate")){
 				me.Generate();
