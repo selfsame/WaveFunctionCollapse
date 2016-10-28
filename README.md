@@ -1,6 +1,6 @@
 # Unity WaveFunctionCollapse
 
-A fork of [https://github.com/mxgmn/WaveFunctionCollapse](https://github.com/mxgmn/WaveFunctionCollapse) for the Unity Game engine.
+A fork of [https://github.com/mxgmn/WaveFunctionCollapse](https://github.com/mxgmn/WaveFunctionCollapse) with tools for the Unity Game engine.
 
 # Usage
 
