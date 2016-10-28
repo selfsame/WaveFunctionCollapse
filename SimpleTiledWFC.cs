@@ -67,12 +67,6 @@ public class SimpleTiledWFC : MonoBehaviour{
 	public void Generate(){
 		obmap = new  Dictionary<string, GameObject>();
 
-		if (group != null){
-			if (Application.isPlaying){DestroyImmediate(group.gameObject);} else {
-				DestroyImmediate(group.gameObject);
-			}	
-		}	
-
 		if (output == null){
 			Transform ot = transform.Find("output-tiled");
 			if (ot != null){output = ot.gameObject;}}
@@ -81,13 +75,15 @@ public class SimpleTiledWFC : MonoBehaviour{
 			output.transform.parent = transform;
 			output.transform.position = this.gameObject.transform.position;
 			output.transform.rotation = this.gameObject.transform.rotation;}
-		group = output.transform.Find(xmlpath);
 
-		if (group == null){
-			group = new GameObject(xmlpath).transform;
-			group.parent = output.transform;
-			group.position = output.transform.position;
-			group.rotation = output.transform.rotation;}	
+		for (int i = 0; i < output.transform.childCount; i++){
+			GameObject go = output.transform.GetChild(i).gameObject;
+			if (Application.isPlaying){Destroy(go);} else {DestroyImmediate(go);}
+		}
+		group = new GameObject(xmlpath).transform;
+		group.parent = output.transform;
+		group.position = output.transform.position;
+		group.rotation = output.transform.rotation;	
 
 		rendering = new GameObject[width, depth];
 		this.model = new SimpleTiledModel(Application.dataPath+"/"+xmlpath, subset, width, depth, periodic);
